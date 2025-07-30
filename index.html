@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>เครื่องมือสร้าง Finite State Machine (UI ที่เสถียร)</title>
+    <title>เครื่องมือสร้าง Finite Automata</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link
       href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;700&display=swap"
@@ -52,6 +52,7 @@
       .info-box {
         background-color: var(--info-box-bg);
         border: 1px solid var(--info-box-border);
+        -webkit-backdrop-filter: blur(5px);
         backdrop-filter: blur(5px);
       }
       input[type="text"] {
@@ -60,6 +61,7 @@
         color: var(--text-color);
       }
       .is-resizing {
+        -webkit-user-select: none;
         user-select: none;
       }
     </style>
@@ -231,7 +233,7 @@
       // --- UI Text Strings ---
       const uiStrings = {
         th: {
-          mainTitle: "เครื่องมือสร้างและจำลอง Finite State Machine",
+          mainTitle: "เครื่องมือสร้างและจำลอง Finite Automata",
           testStringHeader: "ทดสอบสตริง",
           testStringPlaceholder: "ป้อนสตริงที่นี่...",
           resultWaiting: "กำลังรอการป้อนข้อมูล...",
@@ -261,7 +263,7 @@
           ],
         },
         en: {
-          mainTitle: "Finite State Machine Designer & Simulator",
+          mainTitle: "Finite Automata Designer & Simulator",
           testStringHeader: "Test String",
           testStringPlaceholder: "Enter string here...",
           resultWaiting: "Waiting for input...",
@@ -296,6 +298,10 @@
       let globalFontSize = 16;
       let guideLines = [];
       let currentLanguage = "th";
+      let panOffset = { x: 0, y: 0 };
+      let isPanning = false;
+      let panStart = { x: 0, y: 0 };
+      let isSpaceDown = false;
 
       // --- Class Definitions ---
       class State {
@@ -838,12 +844,14 @@
               break;
             }
           }
-          if (targetState && targetState !== dragAction.startState) {
+          if (targetState) {
+            // **FIXED**: Allow self-loops
             const startState = dragAction.startState;
             const exists = transitions.some(
               (t) => t.startState === startState && t.endState === targetState
             );
-            if (!exists) {
+            if (!exists || startState === targetState) {
+              // Allow multiple self-loops if desired, or just one
               const newTransition = new Transition(startState, targetState);
               transitions.push(newTransition);
               selectedObject = newTransition;
